@@ -1,5 +1,7 @@
 (ns sample.core
   (:use resolution.core))
+
+(def window-size 500)
  
 ;;;; This is a sample project intended to show how to use Resolution.
  
@@ -49,19 +51,27 @@
 
 (defn render-game[]
   (println "Render loop"))
+
+(defn loop-body []
+  (Thread/sleep 10)
+  (if (key-up? 65)
+    (println "up")))
+
+
  
 (defn res-loop [initial-state]
- (let [screen 1]
-   (loop [state initial-state]
-     (render-game)
-     (if (:game-over state)
-       (end-game)
-       (recur (res-update state))))))
+  (loop []
+    (loop-body)
+    (recur))
+ ;; (let [screen 1]
+ ;;   (loop [state initial-state]
+ ;;     (render-game)
+ ;;     (if (:game-over state)
+ ;;       (end-game)
+ ;;       (recur (res-update state)))))
+ )
  
-(defn -main [initial-res-state]
-  (let [state initial-res-state]
-    (res-loop initial-res-state))
-  )
+(defn -main [frame]
+  (res-loop init))
  
-(-main init)
-
+(start window-size res-loop)
