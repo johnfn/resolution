@@ -49,15 +49,23 @@ because your sleep rate is only 10 ms."
 (defn load-spritesheet [path tile-size]
   "Given PATH, a path to a spritesheet, and TILE-SIZE, the width and height of each tile (yes, they
 are require to be square for now), returns an array of tiles."
-  (let [sheet (ImageIO/read (File. "sheet.png"))
+  (let [sheet (ImageIO/read (File. path))
         width (.getWidth sheet)
         height (.getHeight sheet)
         tile-width (/ width tile-size)
         tile-height (/ height tile-size)
-        tiles (dorun (for [x (range tile-width)]
-                     (for [y (range tile-height)]
-                       (.getSubimage sheet (* x tile-size) (* y tile-size) tile-size tile-size))))]
-    { :tiles tiles }))
+        tiles (doall (for [x (range tile-width)]
+                       (for [y (range tile-height)]
+                           (.getSubimage sheet (* x tile-size) (* y tile-size) tile-size tile-size))))
+        tile-vec (vec (map vec tiles))
+        ] ;2d list-> 2d vec
+    tile-vec))
+
+(defn draw-sprite [src-sprites src-pos dst-gfx dst-pos]
+  (let [[dest-x dest-y] dst-pos]
+    (.drawImage dst-gfx (get-in src-sprites src-pos)
+                nil dest-x dest-y ))
+  )
 
 ;;; core
 

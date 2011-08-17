@@ -2,6 +2,7 @@
   (:use resolution.core)
   (:import
     (java.awt Toolkit)
+    (java.awt Graphics2D)
    ))
 
 (def window-size 500)
@@ -40,8 +41,6 @@
   
   ; map can update extant items and remove them, but not add.
   ; for some odd reason i cannot think of a better way to solve this.
-  
-
 
  (conj
    (map-hash (fn [key value] (update-object value)) old-state)
@@ -52,6 +51,8 @@
 (defn end-game[]
   (println "GAME OVER."))
 
+(def sprites (load-spritesheet "src/sample/tiles.png" 20))
+
 (defn render-game [frame state]
   (let [bfs (.getBufferStrategy frame)
         gfx (.getDrawGraphics bfs)]
@@ -59,6 +60,8 @@
 
     (.setColor gfx (java.awt.Color/BLACK))
     (.fillRect gfx 0 0 250 250)
+    
+    (draw-sprite sprites [0 0] gfx [350 350])
     
     ;; double buffer
     (.show bfs)
