@@ -70,53 +70,69 @@ are require to be square for now), returns an array of tiles."
 
 ;;; double-buffering
 
-(defn double-buffer [render-fn & args]
+(defn double-buffer [render-fn frame & args]
   "Given a render-fn that renders graphics, double buffers it.
-It will be called like so: (render-fn gfx-object & args)."
-  (fn []
-    (let [bfs (.getBufferStrategy frame)
-          gfx (.getDrawGraphics bfs)]
-      (apply render-fn (cons gfx args))
-      ;; double buffer
-      (.show bfs)
-      (.sync (Toolkit/getDefaultToolkit)))))
+It will be called like so: (render-fn gfx-object & args). You
+should render all graphics to gfx."
+  (let [bfs (.getBufferStrategy frame)
+        gfx (.getDrawGraphics bfs)]
+    (apply render-fn (cons gfx args))
+    ;; double buffer
+    (.show bfs)
+    (.sync (Toolkit/getDefaultToolkit))))
 
 
 ;;; core
 
-(defn start [size game-loop]
-  "Start a new game. Opens up a window with dimensions size * size,
-   and runs game-loop in a separate thread."
-  (def panel
-    (proxy [JPanel KeyListener] []
-      (getPreferredSize [] (Dimension. size size))
-      
-      (keyPressed [e]
-        (let [key-code (.getKeyCode e)]
-          (swap! keys-down conj key-code)))
-         
-      (keyReleased [e]
-        (let [key-code (.getKeyCode e)]
-          (swap! keys-down disj key-code)
-          (swap! keys-up conj key-code)
-       ))
+(defn make-frame [size]
+  "Creates the frame that the game will run in. Also hooks up
+key events."
+  (let [panel
+          (proxy [JPanel KeyListener] []
+            (getPreferredSize [] (Dimension. size size))
 
-      (keyTyped [e])))
+            (keyPressed [e]
+              (let [key-code (.getKeyCode e)]
+                (swap! keys-down conj key-code)))
 
-  (doto panel
-    (.setFocusable true)
-    (.addKeyListener panel))
+            (keyReleased [e]
+              (let [key-code (.getKeyCode e)]
+                (swap! keys-down disj key-code)
+                (swap! keys-up conj key-code)
+                ))
 
-  (def frame (JFrame. "Test"))
+            (keyTyped [e]))]
 
-  (doto frame
-      (.add panel)
-      (.pack)
-      ; (.setDefaultCloseOperation JFrame/EXIT_ON_CLOSE) ; Argh! So frustrating.
-      (.createBufferStrategy 2)
-      (.setVisible true))
-  
-  (game-loop frame {})
-  ;; (def f (future-call (bound-fn [] (game-loop frame))))
+    (.setFocusable panel true)
+    (.addKeyListener panel panel)
+
+    (let [frame (JFrame. "Test")]
+      (.add frame panel)
+      (.pack frame)
+      (.createBufferStrategy frame 2)
+      (.setVisible frame true)
+
+      frame))
  ) 
+
+(defn res-start [functions]
+  "Main function of Resolution. Takes keyword arguments:
+  (Well, it doesn't now, but it will...)
+  :init-fn
+     Function that returns the initial game state. Takes [].
+  :update-fn:
+     Function to update the game state. Takes old game state.
+  :render-fn
+     Renders the game. Takes gfx, state."
+
+  (let [frame (make-frame 500)
+        {init-fn :init-fn
+         update-fn :update-fn
+         render-fn :render-fn} functions]
+
+    (let [initial-state (init-fn)]
+      (loop [state initial-state]
+        (double-buffer render-fn frame {})
+        (Thread/sleep 10)
+        (recur (update-fn state))))))
 
