@@ -53,28 +53,20 @@
 
 (def sprites (load-spritesheet "src/sample/tiles.png" 20))
 
-(defn render-game [frame state]
-  (let [bfs (.getBufferStrategy frame)
-        gfx (.getDrawGraphics bfs)]
-    ;; render
+(defn render-game [gfx frame state]
+  (.setColor gfx (java.awt.Color/BLACK))
+  (.fillRect gfx 0 0 250 250)
 
-    (.setColor gfx (java.awt.Color/BLACK))
-    (.fillRect gfx 0 0 250 250)
-    
-    (draw-sprite sprites [0 0] gfx [350 350])
-    
-    ;; double buffer
-    (.show bfs)
-    (.sync (Toolkit/getDefaultToolkit))
-    )
-  )
+  (draw-sprite sprites [0 0] gfx [350 350])
+
+)
 
 (defn loop-body [frame state]
   (Thread/sleep 10)
   (if (key-up? 65)
     (println "up"))
   
-  (render-game frame {})
+  (double-buffer render-game frame {})
 )
 
 

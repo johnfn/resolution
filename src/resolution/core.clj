@@ -8,10 +8,11 @@
    (javax.swing JPanel JFrame)))
 
 ;;; TODO: (by ludum dare)
-;;; spritesheet abstraction
 ;;; music
+;;; barebones engine
 ;;; computer-aware sleeping (that is, Thread/sleep sleeps for the right amt of time to
 ;;; make framerates reasonable).
+;;; test packaging as a JAR.
 
 
 ;;; utility
@@ -57,8 +58,8 @@ are require to be square for now), returns an array of tiles."
         tiles (doall (for [x (range tile-width)]
                        (for [y (range tile-height)]
                            (.getSubimage sheet (* x tile-size) (* y tile-size) tile-size tile-size))))
-        tile-vec (vec (map vec tiles))
-        ] ;2d list-> 2d vec
+        tile-vec (vec (map vec tiles)) ;2d list-> 2d vec
+        ] 
     tile-vec))
 
 (defn draw-sprite [src-sprites src-pos dst-gfx dst-pos]
@@ -66,6 +67,20 @@ are require to be square for now), returns an array of tiles."
     (.drawImage dst-gfx (get-in src-sprites src-pos)
                 nil dest-x dest-y ))
   )
+
+;;; double-buffering
+
+(defn double-buffer [render-fn & args]
+  "Given a render-fn that renders graphics, double buffers it.
+It will be called like so: (render-fn gfx-object & args)."
+  (fn []
+    (let [bfs (.getBufferStrategy frame)
+          gfx (.getDrawGraphics bfs)]
+      (apply render-fn (cons gfx args))
+      ;; double buffer
+      (.show bfs)
+      (.sync (Toolkit/getDefaultToolkit)))))
+
 
 ;;; core
 
