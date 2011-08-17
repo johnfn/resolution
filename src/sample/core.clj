@@ -1,5 +1,8 @@
 (ns sample.core
-  (:use resolution.core))
+  (:use resolution.core)
+  (:import
+    (java.awt Toolkit)
+   ))
 
 (def window-size 500)
  
@@ -49,19 +52,33 @@
 (defn end-game[]
   (println "GAME OVER."))
 
-(defn render-game[]
-  (println "Render loop"))
+(defn render-game [frame state]
+  (let [bfs (.getBufferStrategy frame)
+        gfx (.getDrawGraphics bfs)]
+    ;; render
 
-(defn loop-body []
+    (.setColor gfx (java.awt.Color/BLACK))
+    (.fillRect gfx 0 0 250 250)
+    
+    ;; double buffer
+    (.show bfs)
+    (.sync (Toolkit/getDefaultToolkit))
+    )
+  )
+
+(defn loop-body [frame state]
   (Thread/sleep 10)
   (if (key-up? 65)
-    (println "up")))
+    (println "up"))
+  
+  (render-game frame {})
+)
 
 
- 
-(defn res-loop [initial-state]
+;;; TODO: Do meaningful stuff with state.
+(defn res-loop [frame initial-state]
   (loop []
-    (loop-body)
+    (loop-body frame {})
     (recur))
  ;; (let [screen 1]
  ;;   (loop [state initial-state]
@@ -70,8 +87,5 @@
  ;;       (end-game)
  ;;       (recur (res-update state)))))
  )
- 
-(defn -main [frame]
-  (res-loop init))
  
 (start window-size res-loop)

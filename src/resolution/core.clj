@@ -1,7 +1,10 @@
 (ns resolution.core
   (:import
-   (java.awt Dimension)
+   (java.awt Dimension Toolkit Font)
+   (java.io File)
    (java.awt.event KeyListener)
+
+   (javax.imageio ImageIO)
    (javax.swing JPanel JFrame)))
 
 ;;; TODO: (by ludum dare)
@@ -11,7 +14,14 @@
 ;;; make framerates reasonable).
 
 
+;;; utility
 
+(defn render-text [x y text gfx color]
+ "Writes TEXT at location X, Y on graphics GFX in color COLOR."
+  (let [font (Font. "Serif" Font/PLAIN 14)]
+    (.setColor gfx color)
+    (.setFont font)
+    (.drawString gfx text x y)))
 
 ;;; keypress functions
 
@@ -33,6 +43,21 @@ because your sleep rate is only 10 ms."
 (defn all-keys-down []
 "Get the set of all pressed keys as keycodes."
   @keys-down)
+
+;; spritesheets
+
+(defn load-spritesheet [path tile-size]
+  "Given PATH, a path to a spritesheet, and TILE-SIZE, the width and height of each tile (yes, they
+are require to be square for now), returns an array of tiles."
+  (let [sheet (ImageIO/read (File. "sheet.png"))
+        width (.getWidth sheet)
+        height (.getHeight sheet)
+        tile-width (/ width tile-size)
+        tile-height (/ height tile-size)
+        tiles (dorun (for [x (range tile-width)]
+                     (for [y (range tile-height)]
+                       (.getSubimage sheet (* x tile-size) (* y tile-size) tile-size tile-size))))]
+    { :tiles tiles }))
 
 ;;; core
 
@@ -68,6 +93,7 @@ because your sleep rate is only 10 ms."
       (.createBufferStrategy 2)
       (.setVisible true))
   
-  (def f (future-call (bound-fn [] (game-loop frame))))
+  (game-loop frame {})
+  ;; (def f (future-call (bound-fn [] (game-loop frame))))
  ) 
 
