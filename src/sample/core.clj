@@ -26,9 +26,22 @@
    
  (defmulti update-object :type)
  
+ ;; (pro (all-keys-down))
+
+ ;;38 up ;;39 right
+ ;;40 down ;;
+ 
  (defmethod update-object :player [object]
-   {:x (+ (:x object)
-           1) :y 40 :type :player})
+   (pro (all-keys-down))
+   (let [{x :x y :y} object
+         new-x (+ x (if (key-down? 39)  1 0)
+                    (if (key-down? 37) -1 0))
+         new-y (+ y (if (key-down? 38) -1 0)
+                    (if (key-down? 40)  1 0))
+         ]
+     ;; (prn (if (key-down? 38) -1 0))
+     {:x new-x :y new-y :type :player}))
+
  (defmethod update-object :color [object]
    {:color 'white :type :color})
  
@@ -41,7 +54,6 @@
  (merge
    (map-hash (fn [key value] (update-object value)) old-state)
    (new-objects old-state)))
-
  
 (defn end-game[]
   (println "GAME OVER."))
@@ -56,7 +68,7 @@
         x (:x player)
         y (:y player)]
     (.setColor gfx (java.awt.Color/RED))
-    (.fillRect gfx 0 0 x y))
+    (.fillRect gfx x y 20 20 ))
 
   (draw-sprite sprites [0 0] gfx [350 350])
 )

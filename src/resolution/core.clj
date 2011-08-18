@@ -53,7 +53,7 @@ because your sleep rate is only 10 ms."
 
 (defn key-down? [key]
 "Is the user holding KEY right now?"
-  (if (@keys-down key) 1 0))
+  (@keys-down key))
 
 (defn all-keys-down []
 "Get the set of all pressed keys as keycodes."

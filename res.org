@@ -16,3 +16,9 @@ When I press a key, he should move.
    CLOSED: [2011-08-17 Wed 23:23]
 
 Was using the wrong variable in the loop.
+
+* DONE Bizarre (if key-down?) bug 
+  CLOSED: [2011-08-18 Thu 00:32]
+
+Fixed: 0 is truthy in clojure. (Ouch! How did I miss that before.)
+
