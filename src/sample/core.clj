@@ -67,21 +67,8 @@
   })
 
 (res-start
-  { :init-fn init
-    :update-fn update-state
-    :render-fn render-game})
+  "The #' is for playing nice with the REPL."
+  { :init-fn #'init
+    :update-fn #'update-state
+    :render-fn #'render-game})
 
-;;; TODO: Do meaningful stuff with state.
-;; (defn res-loop [frame initial-state]
-;;   (loop []
-;;     (loop-body frame {})
-;;     (recur))
-;;  ;; (let [screen 1]
-;;  ;;   (loop [state initial-state]
-;;  ;;     (render-game)
-;;  ;;     (if (:game-over state)
-;;  ;;       (end-game)
-;;  ;;       (recur (res-update state)))))
-;;  )
- 
-;; (start window-size res-loop)

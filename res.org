@@ -1,0 +1,13 @@
+* TODO barebones engine
+** TODO Main character
+
+Just display him onscreen.
+
+** TODO Movement
+
+When I press a key, he should move.
+
+** TODO Collision detection
+* TODO computer-aware sleeping
+* TODO Test JAR packaging
+* TODO Music

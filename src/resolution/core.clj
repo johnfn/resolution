@@ -7,13 +7,6 @@
    (javax.imageio ImageIO)
    (javax.swing JPanel JFrame)))
 
-;;; TODO: (by ludum dare)
-;;; music
-;;; barebones engine
-;;; computer-aware sleeping (that is, Thread/sleep sleeps for the right amt of time to
-;;; make framerates reasonable).
-;;; test packaging as a JAR.
-
 (def running (atom true))
 
 ;;; utility
@@ -131,7 +124,7 @@ key events."
      Function to update the game state. Takes old game state.
   :render-fn
      Renders the game. Takes gfx, state."
-
+  (reset! running true)
   (let [frame (make-frame 500)
         {init-fn :init-fn
          update-fn :update-fn
