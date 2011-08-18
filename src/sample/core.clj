@@ -14,16 +14,15 @@
 stuff like (println) still works."
   (def f (future-call (bound-fn [] (fn)))))
 
-(defn pro [str out-s]
+(defn pro [& args]
   "Print out, but rate limit to once every 10 seconds."
   (future-bind-out
-   (fn [] (if (not (@printed str))
+   (fn [] (if (not (@printed args))
             (do
-              (swap! printed conj str)
-              (let [*out* out-s]
-                (prn str))
+              (swap! printed conj args)
+              (apply println args)
               (Thread/sleep 10000)
-              (swap! printed disj str)
+              (swap! printed disj args)
               )))))
 
 ;;;; This is a sample project intended to show how to use Resolution.
@@ -42,8 +41,6 @@ stuff like (println) still works."
   ;; closures over state etc. 
 
   ;; I think this is bad style, should probably be passing those in.
-
-  
    
  (defmulti update-object :type)
  
@@ -73,10 +70,10 @@ stuff like (println) still works."
   (.setColor gfx (java.awt.Color/BLACK))
   (.fillRect gfx 0 0 250 250)
 
-  ;; (pro "Herp!" *out*)
   (let [player (:player state)
         x (:x player)
         y (:y player)]
+    (pro "player" x y)
     (.setColor gfx (java.awt.Color/RED))
     (.fillRect gfx 0 0 x y))
 
