@@ -2,7 +2,7 @@
   (:import
    (java.awt Dimension Toolkit Font)
    (java.io File)
-   (java.awt.event KeyListener)
+   (java.awt.event WindowAdapter KeyListener)
 
    (javax.imageio ImageIO)
    (javax.swing JPanel JFrame)))
@@ -14,6 +14,7 @@
 ;;; make framerates reasonable).
 ;;; test packaging as a JAR.
 
+(def running (atom true))
 
 ;;; utility
 
@@ -109,8 +110,14 @@ key events."
     (let [frame (JFrame. "Test")]
       (.add frame panel)
       (.pack frame)
-      (.createBufferStrategy frame 2)
       (.setVisible frame true)
+      (.createBufferStrategy frame 2)
+      (.setDefaultCloseOperation frame JFrame/DO_NOTHING_ON_CLOSE)
+      (.addWindowListener frame
+       (proxy [WindowAdapter] []
+         (windowClosing [e]
+           (reset! running false)
+           (.dispose frame))))
 
       frame))
  ) 
@@ -132,7 +139,7 @@ key events."
 
     (let [initial-state (init-fn)]
       (loop [state initial-state]
-        (double-buffer render-fn frame {})
+        (double-buffer render-fn frame initial-state)
         (Thread/sleep 10)
-        (recur (update-fn state))))))
-
+        (if @running
+          (recur (update-fn state)))))))
