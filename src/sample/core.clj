@@ -6,7 +6,26 @@
    ))
 
 (def window-size 500)
- 
+
+(def printed (atom #{}))
+
+(defn future-bind-out [fn]
+  "Like (future fn), except that we bind *out* correctly so that
+stuff like (println) still works."
+  (def f (future-call (bound-fn [] (fn)))))
+
+(defn pro [str out-s]
+  "Print out, but rate limit to once every 10 seconds."
+  (future-bind-out
+    (if (not (@printed str))
+      (do
+        (swap! printed conj str)
+        (let [*out* out-s]
+          (prn str))
+        (Thread/sleep 10000)
+        (swap! printed disj str)
+        ))))
+
 ;;;; This is a sample project intended to show how to use Resolution.
  
 ;; initialization and update of state have really similar parts. I wonder if they can
@@ -23,6 +42,8 @@
   ;; closures over state etc. 
 
   ;; I think this is bad style, should probably be passing those in.
+
+  
    
  (defmulti update-object :type)
  
@@ -52,6 +73,7 @@
   (.setColor gfx (java.awt.Color/BLACK))
   (.fillRect gfx 0 0 250 250)
 
+  (pro "Herp!" *out*)
   (let [player (:player state)
         x (:x player)
         y (:y player)]
@@ -66,7 +88,7 @@
     :background-color {:color 'white :type :color}
   })
 
-;; The #' is for playing nice with the REPL.
+;; The #' is for playing nice with the REPL. Sends var, not actual obj
 (res-start
   { :init-fn #'init
     :update-fn #'update-state
