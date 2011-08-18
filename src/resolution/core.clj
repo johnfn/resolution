@@ -9,6 +9,26 @@
 
 (def running (atom true))
 
+;;; clj-utility
+
+(def printed (atom #{}))
+
+(defn future-bind-out [fn]
+  "Like (future fn), except that we bind *out* correctly so that
+stuff like (println) still works."
+  (def f (future-call (bound-fn [] (fn)))))
+
+(defn pro [& args]
+  "Print out, but rate limit to once every 10 seconds."
+  (future-bind-out
+   (fn [] (if (not (@printed args))
+            (do
+              (swap! printed conj args)
+              (apply println args)
+              (Thread/sleep 10000)
+              (swap! printed disj args)
+              )))))
+
 ;;; utility
 
 (defn render-text [x y text gfx color]
@@ -132,7 +152,7 @@ key events."
 
     (let [initial-state (init-fn)]
       (loop [state initial-state]
-        (double-buffer render-fn frame initial-state)
+        (double-buffer render-fn frame state)
         (Thread/sleep 10)
         (if @running
           (recur (update-fn state)))))))

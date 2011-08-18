@@ -7,24 +7,6 @@
 
 (def window-size 500)
 
-(def printed (atom #{}))
-
-(defn future-bind-out [fn]
-  "Like (future fn), except that we bind *out* correctly so that
-stuff like (println) still works."
-  (def f (future-call (bound-fn [] (fn)))))
-
-(defn pro [& args]
-  "Print out, but rate limit to once every 10 seconds."
-  (future-bind-out
-   (fn [] (if (not (@printed args))
-            (do
-              (swap! printed conj args)
-              (apply println args)
-              (Thread/sleep 10000)
-              (swap! printed disj args)
-              )))))
-
 ;;;; This is a sample project intended to show how to use Resolution.
  
 ;; initialization and update of state have really similar parts. I wonder if they can
@@ -46,7 +28,7 @@ stuff like (println) still works."
  
  (defmethod update-object :player [object]
    {:x (+ (:x object)
-           1) :y 4 :type :player})
+           1) :y 40 :type :player})
  (defmethod update-object :color [object]
    {:color 'white :type :color})
  
@@ -73,7 +55,6 @@ stuff like (println) still works."
   (let [player (:player state)
         x (:x player)
         y (:y player)]
-    (pro "player" x y)
     (.setColor gfx (java.awt.Color/RED))
     (.fillRect gfx 0 0 x y))
 

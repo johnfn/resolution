@@ -11,3 +11,8 @@ When I press a key, he should move.
 * TODO computer-aware sleeping
 * TODO Test JAR packaging
 * TODO Music
+
+** DONE Players' x and y are being kept at 50.
+   CLOSED: [2011-08-17 Wed 23:23]
+
+Was using the wrong variable in the loop.
