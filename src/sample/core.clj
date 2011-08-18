@@ -17,14 +17,14 @@ stuff like (println) still works."
 (defn pro [str out-s]
   "Print out, but rate limit to once every 10 seconds."
   (future-bind-out
-    (if (not (@printed str))
-      (do
-        (swap! printed conj str)
-        (let [*out* out-s]
-          (prn str))
-        (Thread/sleep 10000)
-        (swap! printed disj str)
-        ))))
+   (fn [] (if (not (@printed str))
+            (do
+              (swap! printed conj str)
+              (let [*out* out-s]
+                (prn str))
+              (Thread/sleep 10000)
+              (swap! printed disj str)
+              )))))
 
 ;;;; This is a sample project intended to show how to use Resolution.
  
@@ -73,7 +73,7 @@ stuff like (println) still works."
   (.setColor gfx (java.awt.Color/BLACK))
   (.fillRect gfx 0 0 250 250)
 
-  (pro "Herp!" *out*)
+  ;; (pro "Herp!" *out*)
   (let [player (:player state)
         x (:x player)
         y (:y player)]
