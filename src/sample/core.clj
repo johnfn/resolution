@@ -66,8 +66,8 @@
     :background-color {:color 'white :type :color}
   })
 
+;; The #' is for playing nice with the REPL.
 (res-start
-  "The #' is for playing nice with the REPL."
   { :init-fn #'init
     :update-fn #'update-state
     :render-fn #'render-game})
