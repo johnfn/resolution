@@ -9,6 +9,7 @@
 
 (def running (atom true))
 
+
 ;;; clj-utility
 
 (def printed (atom #{}))
@@ -90,7 +91,7 @@ are require to be square for now), returns an array of tiles."
                 nil dest-x dest-y ))
   )
 
-;;; double-buffering
+;;; graphics
 
 (defn double-buffer [render-fn frame & args]
   "Given a render-fn that renders graphics, double buffers it.
@@ -102,7 +103,6 @@ should render all graphics to gfx."
     ;; double buffer
     (.show bfs)
     (.sync (Toolkit/getDefaultToolkit))))
-
 
 ;;; core
 
@@ -160,7 +160,10 @@ key events."
 
     (let [initial-state (init-fn)]
       (loop [state initial-state]
-        (double-buffer render-fn frame state)
-        (Thread/sleep 10)
-        (if @running
-          (recur (update-fn state)))))))
+        (try
+          (double-buffer render-fn frame state)
+          0 ;;fail
+          (do
+            (Thread/sleep 1)
+            (if @running
+              (recur (update-fn state)))))))))
