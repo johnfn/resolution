@@ -31,8 +31,16 @@ stuff like (println) still works."
 
 ;;; utility
 
+(defn map-hash [update-fn hash]
+  "replace every key, value pair of HASH with key, (fn key value)"
+  (into {} (map (fn [key-value] (assoc key-value 1 (apply update-fn key-value))) (into [] hash))))
+
+(defn strs-to-vec [& args]
+  "convert args into 2D array (or 1D as a special case)."
+  (vec (map vec args)))
+
 (defn render-text [x y text gfx color]
- "Writes TEXT at location X, Y on graphics GFX in color COLOR."
+  "Writes TEXT at location X, Y on graphics GFX in color COLOR."
   (let [font (Font. "Serif" Font/PLAIN 14)]
     (.setColor gfx color)
     (.setFont font)
