@@ -143,23 +143,19 @@
 (defn render-game [gfx state]
   (render-map gfx map1)
 
-  ;; again, we kinda cheat and allow closures to capture some info we should be passing in
-  (defmulti render-object :type)
+  (defn render-player [object gfx]
+    (draw-sprite sprites [1 0] gfx [(:x object) (:y object)]))
 
-  (defmethod render-object :player [object]
-    (.setColor gfx (java.awt.Color/RED))
-
-    (.fillRect gfx (:x object) (:y object) 20 20))
-
-  (defmethod render-object :text [object]
+  (defn render-textbox [object gfx]
     (.setColor gfx (java.awt.Color/RED))
     (.drawString gfx (:content object) (:x object) (:y object)))
 
-  (defmethod render-object :default [object]
-    ;; do nothing (we dont have to render EVERY part of the state)
-    )
+  (defn render-object [object gfx]
+    (cond
+      (= (:type object) :player) (render-player object gfx)
+      (= (:type object) :text) (render-textbox object gfx)))
 
-  (dorun (map-hash (fn [key value] (render-object value)) state))
+  (dorun (map-hash #(render-object %2 gfx) state))
 
   ;; example sprite usage
   ;; (draw-sprite sprites [0 0] gfx [350 350])
