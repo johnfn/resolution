@@ -65,7 +65,11 @@
 (defn abs[n] (if (> n 0) n (- n)))
 
 (defn point [x y] {:x x :y y})
- 
+(defn add-pt [p1 p2]
+  {:x (+ (:x p1) (:x p2))
+   :y (+ (:y p1) (:y p2))
+   })
+
 (defn point-range [p1 p2]
   (let
       [x1 (:x p1) x2 (:x p2) xsign (sign (- x2 x1))
@@ -76,6 +80,8 @@
       :else (do
               (assert (== (abs (- x1 x2)) (abs (- y1 y2)))) 
               (for [[x y] (map vector (range x1 x2 xsign) (range y1 y2 ysign))] (point x y))))))
+
+(defn no-collide [obj] (not (touches-wall? obj map1)))
 
 (defn update-state [old-state]
   ;;these multimethods must be defined inside res-update in order to gain
@@ -94,13 +100,12 @@
    (let [{x :x y :y} object
          dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
          dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
-         new-object object
-         new-object (or (last (filter #(not (touches-wall? % map1)) 
-                                      (point-range new-object (point (+ x dx) y)))) new-object)
-         new-object (or (last (filter #(not (touches-wall? % map1))
-                                      (point-range new-object (point (:x new-object) (+ (:y new-object) dy))))) new-object)
-         ]
-     (merge new-object {:type :player})))
+         d-pt-x {:x dx :y 0}
+         d-pt-y {:x 0 :y dy}]
+     (-> object
+         (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
+         (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
+         (merge {:type :player}))))
 
  (defmethod update-object :color [object]
    {:color 'white :type :color})
