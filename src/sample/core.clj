@@ -95,8 +95,10 @@
          dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
          dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
          new-object object
-         new-object (or (last (filter (fn[x] (not (touches-wall? x map1)))
-                                      (point-range (point x y) (point (+ x dx) (+ y dy))))) object)
+         new-object (or (last (filter #(not (touches-wall? % map1)) 
+                                      (point-range new-object (point (+ x dx) y)))) new-object)
+         new-object (or (last (filter #(not (touches-wall? % map1))
+                                      (point-range new-object (point (:x new-object) (+ (:y new-object) dy))))) new-object)
          ]
      (merge new-object {:type :player})))
 
