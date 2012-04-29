@@ -107,8 +107,8 @@
          (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
          (merge {:type :player}))))
 
- (defmethod update-object :color [object]
-   {:color 'white :type :color})
+ (defmethod update-object :color [object] {:color 'white :type :color})
+ (defmethod update-object :text [object] object)
  
  (defn new-objects [old-state]
    {})
@@ -146,15 +146,14 @@
   ;; again, we kinda cheat and allow closures to capture some info we should be passing in
   (defmulti render-object :type)
 
-  ;(defmethod render-text :text [object]
-  ;  (.setColor gfx (java.awt.Color/RED))
-
-;    (.fillRect gfx (:x object) (:y object) 20 20))
-
   (defmethod render-object :player [object]
     (.setColor gfx (java.awt.Color/RED))
 
     (.fillRect gfx (:x object) (:y object) 20 20))
+
+  (defmethod render-object :text [object]
+    (.setColor gfx (java.awt.Color/RED))
+    (.drawString gfx (:content object) (:x object) (:y object)))
 
   (defmethod render-object :default [object]
     ;; do nothing (we dont have to render EVERY part of the state)
@@ -168,7 +167,7 @@
 
 (defn init []
   { :player {:x 50 :y 50 :color 'red :type :player}
-    ;:text {:x 20 :y 20 :content "Fnord"}
+    :text {:x 100 :y 100 :content "Fnord" :type :text}
     :background-color {:color 'white :type :color}
   })
 
