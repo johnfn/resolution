@@ -83,7 +83,7 @@
 
 (defn no-collide [obj] (not (touches-wall? obj map1)))
 
-(defn update-state [old-state]
+(defn update-state-old [old-state]
   ;;these multimethods must be defined inside res-update in order to gain
   ;; closures over state etc. 
 
@@ -161,11 +161,35 @@
   ;; (draw-sprite sprites [0 0] gfx [350 350])
 )
 
+ (defn update-player [object]
+   (let [{x :x y :y} object
+         dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
+         dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
+         d-pt-x {:x dx :y 0}
+         d-pt-y {:x 0 :y dy}]
+     (->> object
+         (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
+         (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
+         (merge object))))
+
+(def player
+  {:x 50
+   :y 50
+   :render #(draw-sprite sprites [1 0] %2 [(:x %1) (:y %1)])
+   :update #'update-player
+   :depth 5
+   :color 'red
+   :type :player
+  }
+)
+
 (defn init []
-  { :player {:x 50 :y 50 :color 'red :type :player}
-    :text {:x 100 :y 100 :content "Fnord" :type :text}
-    :background-color {:color 'white :type :color}
+  { :player player
+    ;:background-color {:color 'white :type :color}
   })
+
+(defn update-state [state]
+  (map-hash (fn [key value] ((:update value) value)) state))
 
 ;; The #' is for playing nice with the REPL. Sends var, not actual obj
 (defn x []
