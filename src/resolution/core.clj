@@ -160,10 +160,8 @@ key events."
 
     (let [initial-state (init-fn)]
       (loop [state initial-state]
-        (try
-          (double-buffer render-fn frame state)
-          0 ;;fail
-          (do
-            (Thread/sleep 1)
-            (if @running
-              (recur (update-fn state)))))))))
+        (double-buffer render-fn frame state)
+        (do
+          (Thread/sleep 1)
+          (if @running
+            (recur (update-fn state))))))))
