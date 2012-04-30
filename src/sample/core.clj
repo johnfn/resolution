@@ -187,7 +187,7 @@
   })
 
 (defn healthbar-render [bar gfx]
-  (let [{x :x y :y width :width height :height border-color :border-color good-color :good-color bad-color :bad-color health :health health-max :health-max} bar]
+  (let [{test :test x :x y :y width :width height :height border-color :border-color good-color :good-color bad-color :bad-color health :health health-max :health-max} bar]
     (let [good-width (* width (/ health health-max))]
        ;;draw colors
        (.setColor gfx bad-color)
@@ -199,9 +199,10 @@
        (.drawRect gfx x y width height)
        )))
 
-(def healthbar
-  {:x 80
+(defn healthbar []
+  {:x 60
    :y 80
+   :test 55
    :health 5
    :health-max 10
    :width 50
@@ -216,9 +217,21 @@
 
 (defn init []
   { :player player
-    :bar healthbar
-    ;:background-color {:color 'white :type :color}
+    :bar (healthbar)
+    ;;:background-color {:color 'white :type :color}
   })
+
+
+(def initial-state (ref {}))
+
+(defn check-fn []
+  (if (= @initial-state (#'init))
+    {}
+    (dosync
+      ;; isn't checking for updates correctly; basically things every tick is an update.
+      (let [new (#'init) old @initial-state]
+        (ref-set initial-state (#'init))
+        (into {} (for [[key val] new :when (not= (key new) (key old))] [key val]))))))
 
 (defn update-state [state]
   (map-hash (fn [key value] ((:update value) value)) state))
@@ -227,6 +240,7 @@
 (defn x []
   (res-start
     { :init-fn #'init
+      :check-fn #'check-fn
       :update-fn #'update-state
       :render-fn #'render-game}))
 

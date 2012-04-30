@@ -155,13 +155,15 @@ key events."
   (reset! running true)
   (let [frame (make-frame 500)
         {init-fn :init-fn
+         check-fn :check-fn
          update-fn :update-fn
          render-fn :render-fn} functions]
 
     (let [initial-state (init-fn)]
-      (loop [state initial-state]
-        (double-buffer render-fn frame state)
-        (do
-          (Thread/sleep 1)
-          (if @running
-            (recur (update-fn state))))))))
+      (loop [state initial-state] ; check for changes in the initial state.
+        (let [state (merge state (check-fn))]
+          (double-buffer render-fn frame state)
+          (do
+            (Thread/sleep 1)
+            (if @running
+              (recur (update-fn state)))))))))
