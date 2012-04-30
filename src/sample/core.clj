@@ -150,13 +150,14 @@
     (.setColor gfx (java.awt.Color/RED))
     (.drawString gfx (:content object) (:x object) (:y object)))
 
-  (defn render-object [object gfx]
-    (cond
-      (= (:type object) :player) (render-player object gfx)
-      (= (:type object) :text) (render-textbox object gfx)))
+  ;;(defn render-object [object gfx]
+   ;; (cond
+   ;;   (= (:type object) :player) (render-player object gfx)
+   ;;   (= (:type object) :text) (render-textbox object gfx)))
 
-  (dorun (map-hash #(render-object %2 gfx) state))
-
+  (doseq [[k v] state] ((:render v) v gfx))
+  state
+  
   ;; example sprite usage
   ;; (draw-sprite sprites [0 0] gfx [350 350])
 )
@@ -172,6 +173,9 @@
          (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
          (merge object))))
 
+;(defmacro localize [obj keys]
+;  (list 'let 
+
 (def player
   {:x 50
    :y 50
@@ -180,11 +184,39 @@
    :depth 5
    :color 'red
    :type :player
-  }
-)
+  })
+
+(defn healthbar-render [bar gfx]
+  (let [{x :x y :y width :width height :height border-color :border-color good-color :good-color bad-color :bad-color health :health health-max :health-max} bar]
+    (let [good-width (* width (/ health health-max))]
+       ;;draw colors
+       (.setColor gfx bad-color)
+       (.fillRect gfx x y width height)
+       (.setColor gfx good-color)
+       (.fillRect gfx x y good-width height)
+       ;;draw border
+       (.setColor gfx border-color)
+       (.drawRect gfx x y width height)
+       )))
+
+(def healthbar
+  {:x 80
+   :y 80
+   :health 5
+   :health-max 10
+   :width 50
+   :height 10
+   :good-color java.awt.Color/GREEN
+   :bad-color java.awt.Color/RED
+   :border-color java.awt.Color/BLACK
+   :depth 10
+   :update (fn [x] x)
+   :render #'healthbar-render
+})
 
 (defn init []
   { :player player
+    :bar healthbar
     ;:background-color {:color 'white :type :color}
   })
 
