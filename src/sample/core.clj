@@ -176,7 +176,7 @@
 ;(defmacro localize [obj keys]
 ;  (list 'let 
 
-(def player
+(defn player[]
   {:x 50
    :y 50
    :render #(draw-sprite sprites [1 0] %2 [(:x %1) (:y %1)])
@@ -216,22 +216,32 @@
 })
 
 (defn init []
-  { :player player
+  { :player (player)
     :bar (healthbar)
+    :test (player)
+    :test2 (player)
     ;;:background-color {:color 'white :type :color}
   })
 
 
 (def initial-state (ref {}))
 
+(defn eql-but-functions [a b]
+  (cond
+    (or (nil? a) (nil? b)) false
+    (and (fn? a) (fn? b)) true
+    (map? a) (and (every? (fn [[k v]] (eql-but-functions (a k) (b k))) a)
+                  (every? (fn [[k v]] (eql-but-functions (a k) (b k))) b))
+    :else (= a b)))
+
 (defn check-fn []
-  (if (= @initial-state (#'init))
+  (if (eql-but-functions @initial-state (#'init))
     {}
-    (dosync
-      ;; isn't checking for updates correctly; basically things every tick is an update.
-      (let [new (#'init) old @initial-state]
-        (ref-set initial-state (#'init))
-        (into {} (for [[key val] new :when (not= (key new) (key old))] [key val]))))))
+    (let [newstate (#'init)
+          old @initial-state
+          diff (into {} (for [[k val] newstate :when (not (eql-but-functions (newstate k) (old k)))] [k val]))]
+      (dosync (ref-set initial-state (#'init)))
+      diff)))
 
 (defn update-state [state]
   (map-hash (fn [key value] ((:update value) value)) state))
