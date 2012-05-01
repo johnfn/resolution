@@ -123,7 +123,8 @@
 (defn end-game[]
   (println "GAME OVER."))
 
-(def sprites (load-spritesheet "src/sample/tiles.png" 20))
+(def sprites
+  (load-spritesheet "src/sample/tiles.png" 20))
 
 (defn render-tile [x-abs y-abs gfx type]
   (if (= type \0)
@@ -137,8 +138,7 @@
 
   (dorun (for [x (range 30)
                y (range 30)]
-           (render-tile (* x 20) (* y 20) gfx (get-in map [x y]))
-           )))
+           (render-tile (* x 20) (* y 20) gfx (get-in map [x y])))))
 
 (defn render-game [gfx state]
   (render-map gfx map1)
@@ -150,16 +150,8 @@
     (.setColor gfx (java.awt.Color/RED))
     (.drawString gfx (:content object) (:x object) (:y object)))
 
-  ;;(defn render-object [object gfx]
-   ;; (cond
-   ;;   (= (:type object) :player) (render-player object gfx)
-   ;;   (= (:type object) :text) (render-textbox object gfx)))
-
-  (doseq [[k v] state] ((:render v) v gfx))
+  (doseq [[k v] (seq state)] ((:render v) v gfx))
   state
-  
-  ;; example sprite usage
-  ;; (draw-sprite sprites [0 0] gfx [350 350])
 )
 
  (defn update-player [object]
@@ -206,20 +198,19 @@
    :health 5
    :health-max 10
    :width 50
-   :height 10
+   :height 6
    :good-color java.awt.Color/GREEN
    :bad-color java.awt.Color/RED
    :border-color java.awt.Color/BLACK
    :depth 10
-   :update (fn [x] x)
+   :update identity
    :render #'healthbar-render
 })
 
 (defn init []
   { :player (player)
     :bar (healthbar)
-    :test (player)
-    :test2 (player)
+    :player2 (player)
     ;;:background-color {:color 'white :type :color}
   })
 

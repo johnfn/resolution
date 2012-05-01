@@ -70,17 +70,22 @@ because your sleep rate is only 10 ms."
 
 ;; spritesheets
 
+(defn color-key [img color]
+  (doseq [i (range (.getHeight img)) j (range (.getHeight img))]
+    (when (== (.getRGB img i j) (.getRGB color))
+      (.setRGB img i j (.getRGB (new java.awt.Color 0 255 255 255)))))
+  img)
+
 (defn load-spritesheet [path tile-size]
   "Given PATH, a path to a spritesheet, and TILE-SIZE, the width and height of each tile (yes, they
 are require to be square for now), returns an array of tiles."
-  (let [sheet (ImageIO/read (File. path))
+  (let [sheet (color-key (ImageIO/read (File. path)) java.awt.Color/WHITE)
         width (.getWidth sheet)
         height (.getHeight sheet)
         tile-width (/ width tile-size)
         tile-height (/ height tile-size)
-        tiles (doall (for [x (range tile-width)]
-                       (for [y (range tile-height)]
-                           (.getSubimage sheet (* x tile-size) (* y tile-size) tile-size tile-size))))
+        tiles (doall (for [x (range tile-width)] (for [y (range tile-height)]
+                                   (.getSubimage sheet (* x tile-size) (* y tile-size) tile-size tile-size))))
         tile-vec (vec (map vec tiles)) ;2d list-> 2d vec
         ] 
     tile-vec))
@@ -164,6 +169,6 @@ key events."
         (let [state (merge state (check-fn))]
           (double-buffer render-fn frame state)
           (do
-            (Thread/sleep 1)
+            (Thread/sleep 5)
             (if @running
               (recur (update-fn state)))))))))
