@@ -169,6 +169,6 @@ key events."
         (let [state (merge state (check-fn))]
           (double-buffer render-fn frame state)
           (do
-            (Thread/sleep 5)
+            (Thread/sleep 50)
             (if @running
               (recur (update-fn state)))))))))

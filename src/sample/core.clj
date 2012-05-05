@@ -7,6 +7,8 @@
 
 (def window-size 500)
 
+(defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
+
 (def map1
   (strs-to-vec
     "000000000000000000000000000000"
@@ -59,7 +61,7 @@
                      (is-wall? (get-in map [x y]))))
     ))
 
-(def speed 5)
+(def speed 20)
 
 (defn sign[n] (cond (> n 0) 1 (< n 0) -1 :else 0))
 (defn abs[n] (if (> n 0) n (- n)))
@@ -127,10 +129,10 @@
   (load-spritesheet "src/sample/tiles.png" 20))
 
 (defn render-tile [x-abs y-abs gfx type]
-  (if (= type \0)
-    (.setColor gfx (java.awt.Color/WHITE)))
-  (if (= type \1)
-    (.setColor gfx (java.awt.Color/BLACK)))
+  (case type
+    \0 (.setColor gfx (java.awt.Color/WHITE))
+    \1 (.setColor gfx (java.awt.Color/BLACK))
+    \2 (.setColor gfx (java.awt.Color/RED)))
   (.fillRect gfx x-abs y-abs 20 20))
 
 (defn render-map [gfx map]
@@ -142,36 +144,38 @@
 
 (defn render-game [gfx state]
   (render-map gfx map1)
-
-  (defn render-player [object gfx]
-    (draw-sprite sprites [1 0] gfx [(:x object) (:y object)]))
-
-  (defn render-textbox [object gfx]
-    (.setColor gfx (java.awt.Color/RED))
-    (.drawString gfx (:content object) (:x object) (:y object)))
-
   (doseq [[k v] (seq state)] ((:render v) v gfx))
   state
 )
 
- (defn update-player [object]
-   (let [{x :x y :y} object
-         dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
-         dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
-         d-pt-x {:x dx :y 0}
-         d-pt-y {:x 0 :y dy}]
-     (->> object
-         (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
-         (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
-         (merge object))))
+(defn bound [x]
+  (cond
+    (< x 20) 20
+    (> x 400) 400
+    :else x))
 
-;(defmacro localize [obj keys]
-;  (list 'let 
+(defn update-player [object state]
+  (let [{x :x y :y} object
+        dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
+        dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
+        d-pt-x {:x dx :y 0}
+        d-pt-y {:x 0 :y dy}]
+    (-> object
+        ;; update position
+        (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
+        (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
+        (update-in [:x] bound)
+        (update-in [:y] bound)
+        ;; merge back into object
+        (#(merge object %)))))
+
+(defn render-player [player gfx]
+  (render-tile (:x player) (:y player) gfx \1))
 
 (defn player[]
   {:x 50
    :y 50
-   :render #(draw-sprite sprites [1 0] %2 [(:x %1) (:y %1)])
+   :render #'render-player
    :update #'update-player
    :depth 5
    :color 'red
@@ -179,7 +183,7 @@
   })
 
 (defn healthbar-render [bar gfx]
-  (let [{test :test x :x y :y width :width height :height border-color :border-color good-color :good-color bad-color :bad-color health :health health-max :health-max} bar]
+  (let [{:keys [test x y width height border-color -color good-color -color bad-color health health-max]} bar]
     (let [good-width (* width (/ health health-max))]
        ;;draw colors
        (.setColor gfx bad-color)
@@ -192,9 +196,8 @@
        )))
 
 (defn healthbar []
-  {:x 60
-   :y 80
-   :test 55
+  {:x 80
+   :y 100
    :health 5
    :health-max 10
    :width 50
@@ -203,39 +206,69 @@
    :bad-color java.awt.Color/RED
    :border-color java.awt.Color/BLACK
    :depth 10
-   :update identity
+   :update (fn [x y] x)
    :render #'healthbar-render
+})
+
+(defn enemy-render [enemy gfx]
+  (render-tile (:x enemy) (:y enemy) gfx \2))
+
+(defn random-movement []
+  (if (< (rand) 0.8)
+    0
+    (if (> (rand) 0.5) -20 20)))
+
+(defn dist [a b]
+   (+ (abs (- (:x a) (:x b)))
+      (abs (- (:y a) (:y b)))))
+
+(defn touching? [a b]
+  (< (dist a b) 40))
+
+;; take a random step in the dir direction
+(defn random-step [obj dir]
+  (merge obj {dir (+ (dir obj) (random-movement))}))
+  
+(defn enemy-update [enemy state]
+  (when (touching? (:player state) enemy)
+    (println "ouch"))
+
+  (-> enemy
+      (update-in [:x] #(+ % (random-movement)))
+      (update-in [:y] #(+ % (random-movement)))
+      (update-in [:x] bound)
+      (update-in [:y] bound)))
+
+(defn enemy[]
+  {:x 220
+   :y 200
+   :color java.awt.Color/RED
+   :update #'enemy-update
+   :render #'enemy-render
 })
 
 (defn init []
   { :player (player)
     :bar (healthbar)
     :player2 (player)
+    :enemy (enemy)
     ;;:background-color {:color 'white :type :color}
   })
 
 
 (def initial-state (ref {}))
 
-(defn eql-but-functions [a b]
-  (cond
-    (or (nil? a) (nil? b)) false
-    (and (fn? a) (fn? b)) true
-    (map? a) (and (every? (fn [[k v]] (eql-but-functions (a k) (b k))) a)
-                  (every? (fn [[k v]] (eql-but-functions (a k) (b k))) b))
-    :else (= a b)))
-
 (defn check-fn []
-  (if (eql-but-functions @initial-state (#'init))
+  (if (= @initial-state (#'init))
     {}
     (let [newstate (#'init)
           old @initial-state
-          diff (into {} (for [[k val] newstate :when (not (eql-but-functions (newstate k) (old k)))] [k val]))]
+          diff (into {} (for [[k val] newstate :when (not (= (newstate k) (old k)))] [k val]))]
       (dosync (ref-set initial-state (#'init)))
       diff)))
 
 (defn update-state [state]
-  (map-hash (fn [key value] ((:update value) value)) state))
+  (map-hash (fn [key value] ((:update value) value state)) state))
 
 ;; The #' is for playing nice with the REPL. Sends var, not actual obj
 (defn x []
