@@ -47,8 +47,6 @@
 ;; initialization and update of state have really similar parts. I wonder if they can
 ;; be joined together somehow.
  
-;; TODO: type is a redundancy here. (with res-init)
- 
 (defn is-wall? [id]
   (or (= id \1)))
 
@@ -217,6 +215,20 @@
   (if (< (rand) 0.8)
     0
     (if (> (rand) 0.5) -20 20)))
+
+;; The following three functions involve the new-item queue.
+;; Threading a world state through each update function is clearly suboptimal, so we push into the queue
+;; messages about anything that would update the world.
+
+(def *queue* (ref {:new-items [(make-bullet)]}))
+
+(defn clear-queue []
+  (let [q @*queue*]
+    (reduce merge (flatten (for [key q]
+                      (for [msg (key q)] (process-msg msg)))))))
+
+(defn enqueue [type message]
+  (dosync (alter queue update-in [type] message)))
 
 (defn dist [a b]
    (+ (abs (- (:x a) (:x b)))
