@@ -166,7 +166,7 @@ key events."
 
     (let [initial-state (init-fn)]
       (loop [state initial-state] ; check for changes in the initial state.
-        (let [state (merge state (check-fn))]
+        (let [state state] ;;TOOD - (merge state (check-fn))]
           (double-buffer render-fn frame state)
           (do
             (Thread/sleep 50)
