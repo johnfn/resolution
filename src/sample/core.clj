@@ -83,6 +83,43 @@
 
 (defn no-collide [obj] (not (touches-wall? obj map1)))
 
+(defn update-state-old [old-state]
+  ;;these multimethods must be defined inside res-update in order to gain
+  ;; closures over state etc. 
+
+  ;; I think this is bad style, should probably be passing those in.
+   
+ 
+
+ (defmulti update-object :type)
+ 
+ ;;38 up ;;39 right
+ ;;40 down ;;
+ ;;TODO i am hardcoding the current map in this method. take it out!
+ (defmethod update-object :player [object]
+   (let [{x :x y :y} object
+         dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
+         dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
+         d-pt-x {:x dx :y 0}
+         d-pt-y {:x 0 :y dy}]
+     (-> object
+         (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
+         (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
+         (merge {:type :player}))))
+
+ (defmethod update-object :color [object] {:color 'white :type :color})
+ (defmethod update-object :text [object] object)
+ 
+ (defn new-objects [old-state]
+   {})
+  
+  ; map can update extant items and remove them, but not add.
+  ; for some odd reason i cannot think of a better way to solve this.
+
+ (merge
+   (map-hash (fn [key value] (update-object value)) old-state)
+   (new-objects old-state)))
+ 
 (defn end-game[]
   (println "GAME OVER."))
 
@@ -105,7 +142,7 @@
 
 (defn render-game [gfx state]
   (render-map gfx map1)
-  (doseq [v state] ((:render v) v gfx))
+  (doseq [[k v] (seq state)] ((:render v) v gfx))
   state
 )
 
@@ -140,7 +177,6 @@
    :update #'update-player
    :depth 5
    :color 'red
-   :uid (gensym "player")
    :type :player
   })
 
@@ -184,15 +220,15 @@
 ;; Threading a world state through each update function is clearly suboptimal, so we push into the queue
 ;; messages about anything that would update the world.
 
-;;(def *queue* (ref {:new-items [(make-bullet)]}))
+(def *queue* (ref {:new-items [(make-bullet)]}))
 
-;;(defn clear-queue []
-;;  (let [q @*queue*]
-;;    (reduce merge (flatten (for [key q]
-;;                      (for [msg (key q)] (process-msg msg)))))))
+(defn clear-queue []
+  (let [q @*queue*]
+    (reduce merge (flatten (for [key q]
+                      (for [msg (key q)] (process-msg msg)))))))
 
-;;(defn enqueue [type message]
-;;  (dosync (alter queue update-in [type] message)))
+(defn enqueue [type message]
+  (dosync (alter queue update-in [type] message)))
 
 (defn dist [a b]
    (+ (abs (- (:x a) (:x b)))
@@ -205,14 +241,10 @@
 (defn random-step [obj dir]
   (merge obj {dir (+ (dir obj) (random-movement))}))
   
-(defn is-player [obj]
-  (= (:type obj) :player))
-
 (defn enemy-update [enemy state]
-  (if-let [player (first (filter is-player state))]
-    (when (touching? player enemy)
-      (println "ouch")))
-  
+  (when (touching? (:player state) enemy)
+    (println "ouch"))
+
   (-> enemy
       (update-in [:x] #(+ % (random-movement)))
       (update-in [:y] #(+ % (random-movement)))
@@ -228,29 +260,27 @@
 })
 
 (defn init []
-  (reduce merge #{} [(player) (healthbar) (player) (enemy)]))
+  { :player (player)
+    :bar (healthbar)
+    :player2 (player)
+    :enemy (enemy)
+    ;;:background-color {:color 'white :type :color}
+  })
 
 
-(def initial-state (ref #{}))
+(def initial-state (ref {}))
 
 (defn check-fn []
-  #{})
   (if (= @initial-state (#'init))
-    #{}
+    {}
     (let [newstate (#'init)
           old @initial-state
-          diff (into #{} (for [k newstate :when (not (= (newstate k) (old k)))] val))]
+          diff (into {} (for [[k val] newstate :when (not (= (newstate k) (old k)))] [k val]))]
       (dosync (ref-set initial-state (#'init)))
-      diff
-
-      #{} ;;TODO
-      ))
-
-(defn map-set [fn & colls]
-  (apply map fn colls))
+      diff)))
 
 (defn update-state [state]
-  (map-set #((:update %) % state) state))
+  (map-hash (fn [key value] ((:update value) value state)) state))
 
 ;; The #' is for playing nice with the REPL. Sends var, not actual obj
 (defn x []
