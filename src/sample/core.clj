@@ -83,43 +83,6 @@
 
 (defn no-collide [obj] (not (touches-wall? obj map1)))
 
-(defn update-state-old [old-state]
-  ;;these multimethods must be defined inside res-update in order to gain
-  ;; closures over state etc. 
-
-  ;; I think this is bad style, should probably be passing those in.
-   
- 
-
- (defmulti update-object :type)
- 
- ;;38 up ;;39 right
- ;;40 down ;;
- ;;TODO i am hardcoding the current map in this method. take it out!
- (defmethod update-object :player [object]
-   (let [{x :x y :y} object
-         dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
-         dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
-         d-pt-x {:x dx :y 0}
-         d-pt-y {:x 0 :y dy}]
-     (-> object
-         (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
-         (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
-         (merge {:type :player}))))
-
- (defmethod update-object :color [object] {:color 'white :type :color})
- (defmethod update-object :text [object] object)
- 
- (defn new-objects [old-state]
-   {})
-  
-  ; map can update extant items and remove them, but not add.
-  ; for some odd reason i cannot think of a better way to solve this.
-
- (merge
-   (map-hash (fn [key value] (update-object value)) old-state)
-   (new-objects old-state)))
- 
 (defn end-game[]
   (println "GAME OVER."))
 
@@ -220,15 +183,15 @@
 ;; Threading a world state through each update function is clearly suboptimal, so we push into the queue
 ;; messages about anything that would update the world.
 
-(def *queue* (ref {:new-items [(make-bullet)]}))
+(def *queue* (ref {})) ;;:new-items [(make-bullet)]}))
 
-(defn clear-queue []
+(defn clear-queue [process-msg]
   (let [q @*queue*]
     (reduce merge (flatten (for [key q]
                       (for [msg (key q)] (process-msg msg)))))))
 
 (defn enqueue [type message]
-  (dosync (alter queue update-in [type] message)))
+  (dosync (alter *queue* update-in [type] message)))
 
 (defn dist [a b]
    (+ (abs (- (:x a) (:x b)))
