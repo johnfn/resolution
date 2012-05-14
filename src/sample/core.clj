@@ -104,10 +104,9 @@
            (render-tile (* x 20) (* y 20) gfx (get-in map [x y])))))
 
 (defn render-game [gfx state]
-  (render-map gfx map1)
+  (render-map gfx map1) ;;special case! (TODO)
   (doseq [[k v] (seq state)] ((:render v) v gfx))
-  state
-)
+  state)
 
 (defn bound [x]
   (cond
@@ -204,8 +203,16 @@
 (defn random-step [obj dir]
   (merge obj {dir (+ (dir obj) (random-movement))}))
   
+;;todo - should probably throw if there's more than one.
+(defn get-type [col type]
+  (if-let [obj (first (filter #(let [[key val] %] (= (:type val) type)) col))]
+    (second obj)
+    (assert false)))
+
 (defn enemy-update [enemy state]
-  (when (touching? (:player state) enemy)
+  ;(println (get-type state :player))
+  
+  (when (touching? (get-type state :player) enemy)
     (println "ouch"))
 
   (-> enemy
@@ -222,14 +229,16 @@
    :render #'enemy-render
 })
 
-(defn init []
-  { :player (player)
-    :bar (healthbar)
-    :player2 (player)
-    :enemy (enemy)
-    ;;:background-color {:color 'white :type :color}
-  })
+(defn zip-with-times-seen [list]
+  ; ['a 'b 'c 'c 'c] => [['a 0] ['b 0] ['c 0] ['c 1] ['c 2]]
+  (apply concat (for [a (set list)] (map vector (repeat a) (range (count (filter #(= % a) list)))))))
 
+(defn gen-uniq-names [& fns]
+  (let [uniq-vecs (zip-with-times-seen fns)]
+    (zipmap (map #(apply str %) uniq-vecs) (map #((first %)) uniq-vecs))))
+
+(defn init []
+  (gen-uniq-names #'player #'healthbar #'enemy #'enemy))
 
 (def initial-state (ref {}))
 
