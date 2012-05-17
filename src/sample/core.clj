@@ -3,6 +3,9 @@
   (:import
     (java.awt Toolkit)
     (java.awt Graphics2D)
+    (javax.imageio ImageIO)
+    (java.io File)
+    (java.awt.image BufferedImage)
    ))
 
 (def window-size 500)
@@ -199,6 +202,19 @@
 (defn touching? [a b]
   (< (dist a b) 40))
 
+(defn get-pixel [uint]
+  [(bit-and (bit-shift-right uint 16) 0xff)
+   (bit-and (bit-shift-right uint  8) 0xff)
+   (bit-and                  uint     0xff)])
+
+(defn load-map [filename]
+  (let [img (ImageIO/read (new File filename))
+        width (.getWidth img)
+        height (.getHeight img)]
+    (for [x (range width)]
+      (for [y (range height)]
+        (get-pixel (.getRGB img x y))))))
+
 ;; take a random step in the dir direction
 (defn random-step [obj dir]
   (merge obj {dir (+ (dir obj) (random-movement))}))
@@ -232,6 +248,9 @@
 (defn zip-with-times-seen [list]
   ; ['a 'b 'c 'c 'c] => [['a 0] ['b 0] ['c 0] ['c 1] ['c 2]]
   (apply concat (for [a (set list)] (map vector (repeat a) (range (count (filter #(= % a) list)))))))
+
+;a lil better?
+;(reduce (fn [acc val] (reduce [] (conj acc [val (count (filter #(= val (first %))))]))))
 
 (defn gen-uniq-names [& fns]
   (let [uniq-vecs (zip-with-times-seen fns)]
