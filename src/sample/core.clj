@@ -12,23 +12,26 @@
 
 (defmacro dbg[x] `(let [x# ~x] (println "dbg:" '~x "=" x#) x#))
 
+(defn transpose [a]
+  (apply map vector a))
+
 (def map1
   (strs-to-vec
     "000000000000000000000000000000"
     "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000111111111111111000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
-    "000000000000000000000000000000"
+    "000000000000000001000000100000"
+    "000000000000000001000000100000"
+    "000000000111111111111111100000"
+    "000000000000010001000000100000"
+    "000000000000000001000000100000"
+    "000000000000000001000000100000"
+    "000000000000000001000000100000"
+    "000000000000000001000000100000"
+    "000000000000000001000000100000"
+    "000000000000000001000000100000"
+    "000000000000000001000000000000"
+    "000000000000000001000000000000"
+    "000000000000000001000000000000"
     "000000000000000000000000000000"
     "000000000000000000000000000000"
     "000000000000000000000000000000"
@@ -62,7 +65,7 @@
                      (is-wall? (get-in map [x y]))))
     ))
 
-(def speed 20)
+(def speed 13)
 
 (defn sign[n] (cond (> n 0) 1 (< n 0) -1 :else 0))
 (defn abs[n] (if (> n 0) n (- n)))
@@ -117,18 +120,28 @@
     (> x 400) 400
     :else x))
 
+(defn is-on-ground [object]
+  (let [feet-pos (point-range {:x (:x object) :y (+ 2 (:y object))} {:x (+ (:x object) 20) :y (+ (:y object) 2)})]
+    (some not (map no-collide feet-pos))))
+
+(def JUMP 38)
+
 (defn update-player [object state]
-  (let [{x :x y :y} object
+  (let [{x :x y :y vy :vy} object ;;there's a nicer way to do this - forget it at the moment tho.
+        on-ground (is-on-ground object)
+        dy (if on-ground (if (key-down? JUMP) -20 0) (+ vy 2))
         dx (+ (if (key-down? 39)  speed 0) (if (key-down? 37) (- speed) 0))
-        dy (+ (if (key-down? 38) (- speed) 0) (if (key-down? 40)  speed 0))
         d-pt-x {:x dx :y 0}
-        d-pt-y {:x 0 :y dy}]
+        d-pt-y {:x 0 :y dy}
+        ]
     (-> object
         ;; update position
         (#(or (last (filter no-collide (point-range % (add-pt d-pt-x %)))) %))
         (#(or (last (filter no-collide (point-range % (add-pt d-pt-y %)))) %))
         (update-in [:x] bound)
         (update-in [:y] bound)
+        (assoc-in [:on-ground] true)
+        (assoc-in [:vy] dy)
         ;; merge back into object
         (#(merge object %)))))
 
@@ -138,6 +151,8 @@
 (defn player[]
   {:x 50
    :y 50
+   :vy 0
+   :on-ground false
    :render #'render-player
    :update #'update-player
    :depth 5
